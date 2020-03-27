@@ -155,7 +155,11 @@ class CPU:
             elif instruction == JMP:
                 print('JMP')
             elif instruction == JEQ:
-                print('JEQ')                
+                if self.flag:
+                    self.pc = self.reg[self.ram[self.pc+1]]
+                else:
+                    print('flags are down')
+                    self.pc += 2          
             elif instruction == JEN:
                 print('JEN')
             else:
