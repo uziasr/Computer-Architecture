@@ -18,6 +18,7 @@ class CPU:
         self.sp = 7
         self.reg[self.sp] = 0xf4 # where 7 is the stack pointer, the last index in the reg
         self.pc = 0
+        self.flag = False
         self.branchtable = {}
         self.branchtable[0b00000001] = self.operand_HLT
         self.branchtable[0b01000111] = self.operand_PRN
@@ -124,16 +125,14 @@ class CPU:
 
     def run(self):
         """Run the CPU.""" 
-        IR = None
         HLT = 0b00000001
-        PRN = 0b01000111
-        LDI = 0b10000010
-        MUL = 0b10100010
-        PUSH = 0b01000101
-        POP = 0b01000110
         CALL = 0b01010000
         RET = 0b00010001
-        ADD = 0b10100000
+        CMP = 0b10100111
+        JEQ = 0b01010101
+        JEN = 0b01010110
+        JMP = 0b01010100
+
         while not (self.ram_read(self.pc) is HLT):
             instruction = self.ram_read(self.pc)
             if instruction == CALL:
@@ -147,6 +146,18 @@ class CPU:
                 # print("ret")
                 self.pc = self.ram[self.reg[self.sp]]
                 self.reg[self.sp] += 1
+            elif instruction == CMP:
+                value_1 = self.reg[self.ram[self.pc + 1]]
+                value_2 = self.reg[self.ram[self.pc + 2]]
+                self.flag = value_1 == value_2
+                print(value_1 == value_2)
+                self.pc += 3
+            elif instruction == JMP:
+                print('JMP')
+            elif instruction == JEQ:
+                print('JEQ')                
+            elif instruction == JEN:
+                print('JEN')
             else:
                 # print(instruction)
                 self.branchtable[instruction]()
