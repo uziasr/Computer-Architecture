@@ -28,6 +28,13 @@ class CPU:
         self.branchtable[0b01000110] = self.operand_POP
         self.branchtable[0b10100000] = self.operand_ADD
 
+        self.branchtable[0b01010000] = self.operand_CALL
+        self.branchtable[0b00010001] = self.operand_RET
+        self.branchtable[0b10100111] = self.operand_CMP
+        self.branchtable[0b01010101] = self.operand_JEQ
+        self.branchtable[0b01010110] = self.operand_JNE
+        self.branchtable[0b01010100] = self.operand_JMP
+
 
     def load(self):
         """Load a program into memory."""
@@ -96,32 +103,70 @@ class CPU:
     def operand_LDI(self,):
         self.reg[self.ram_read(self.pc+1)] = self.ram_read(self.pc+2)
         self.pc += 3
+    
     def operand_PRN(self,):
         print(self.reg[self.ram_read(self.pc+1)])
         self.pc += 2
+    
     def operand_HLT(self,):
         return  False
+    
     def operand_MUL(self,):
         self.reg[self.ram_read(self.pc+1)]=(self.reg[self.ram_read(self.pc+1)] * self.reg[self.ram_read(self.pc+2)])
         self.pc +=3
+    
     def operand_PUSH(self,):
         self.reg[self.sp] -= 1 # decrements as the stacks starts at the end
         reg_num = self.ram[self.pc + 1]
         register_value = self.reg[reg_num]
         self.ram[self.reg[self.sp]] = register_value
         self.pc += 2 # program counter
+    
     def operand_POP(self,):
         value = self.ram[self.reg[self.sp]]
         reg_num = self.ram[self.pc + 1]
         self.reg[reg_num] = value
         self.reg[self.sp] +=1
         self.pc += 2
+    
     def operand_ADD(self,):
         # print(self.pc, self.sp)
         num_1 = self.reg[self.ram[self.pc+1]]
         num_2 = self.reg[self.ram[self.pc+2]]
         self.reg[self.ram[self.pc+1]] = num_1 + num_2
         self.pc +=3
+    
+    def operand_CALL(self,):
+        return_address = self.pc + 2
+        self.reg[self.sp] -=1
+        self.ram[self.reg[self.sp]] = return_address
+        reg_num = self.ram[self.pc + 1]
+        self.pc = self.reg[reg_num]
+        
+    def operand_RET(self,):
+        # print("ret")
+        self.pc = self.ram[self.reg[self.sp]]
+        self.reg[self.sp] += 1   
+
+    def operand_CMP(self,):
+        value_1 = self.reg[self.ram[self.pc + 1]]
+        value_2 = self.reg[self.ram[self.pc + 2]]
+        self.flag = value_1 == value_2
+        self.pc += 3
+    
+    def operand_JMP(self,):
+        self.pc = self.reg[self.ram[self.pc+1]]
+    def operand_JNE(self,):
+        if self.flag == False:
+            self.pc = self.reg[self.ram[self.pc+1]]
+        else:
+            self.pc += 2          
+
+    def operand_JEQ(self,):
+        if self.flag:
+            self.pc = self.reg[self.ram[self.pc+1]]
+        else:
+            self.pc += 2 
 
     def run(self):
         """Run the CPU.""" 
@@ -130,7 +175,7 @@ class CPU:
         RET = 0b00010001
         CMP = 0b10100111
         JEQ = 0b01010101
-        JEN = 0b01010110
+        JNE = 0b01010110
         JMP = 0b01010100
 
         while not (self.ram_read(self.pc) is HLT):
@@ -150,18 +195,19 @@ class CPU:
                 value_1 = self.reg[self.ram[self.pc + 1]]
                 value_2 = self.reg[self.ram[self.pc + 2]]
                 self.flag = value_1 == value_2
-                print(value_1 == value_2)
                 self.pc += 3
             elif instruction == JMP:
-                print('JMP')
+                self.pc = self.reg[self.ram[self.pc+1]]
             elif instruction == JEQ:
                 if self.flag:
                     self.pc = self.reg[self.ram[self.pc+1]]
                 else:
-                    print('flags are down')
                     self.pc += 2          
-            elif instruction == JEN:
-                print('JEN')
+            elif instruction == JNE:
+                if self.flag == False:
+                    self.pc = self.reg[self.ram[self.pc+1]]
+                else:
+                    self.pc += 2          
             else:
                 # print(instruction)
                 self.branchtable[instruction]()
